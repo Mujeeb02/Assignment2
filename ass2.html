@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Table Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .search-bar {
+      margin-bottom: 20px;
+    }
+
+    .pagination, .actions {
+      margin-top: 20px;
+    }
+
+    .selected {
+      background-color: #e0e0e0;
+    }
+
+    /* Add your additional styling as needed */
+
+  </style>
+</head>
+<body>
+
+<div class="search-bar">
+  <label for="search">Search:</label>
+  <input type="text" id="search" placeholder="Search...">
+  <button class="search-icon" onclick="search()">Search</button>
+</div>
+
+<table id="data-table">
+  <thead>
+    <tr>
+      <th></th>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Email</th>
+      <!-- Add more columns as needed -->
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Table rows will be dynamically generated here -->
+  </tbody>
+</table>
+
+<div class="pagination">
+  <!-- Pagination buttons will be dynamically generated here -->
+</div>
+
+<div class="actions">
+  <button onclick="deleteSelected()">Delete Selected</button>
+</div>
+
+<script>
+  // Sample data (you can replace this with your own data)
+  const data = [
+  {
+	"id": "1",
+	"name": "Aaron Miles",
+	"email": "aaron@mailinator.com",
+	"role": "member"
+	},
+	{
+	"id": "2",
+	"name": "Aishwarya Naik",
+	"email": "aishwarya@mailinator.com",
+	"role": "member"
+	},
+	{
+	"id": "3",
+	"name": "Arvind Kumar",
+	"email": "arvind@mailinator.com",
+	"role": "admin"
+	}
+    // Add more data as needed
+  ];
+
+  // Variables for pagination
+  const rowsPerPage = 10;
+  let currentPage = 1;
+
+  // Function to render the table
+  function renderTable() {
+    const tableBody = document.querySelector('#data-table tbody');
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const tableRows = data.slice(start, end);
+
+    tableBody.innerHTML = '';
+
+    tableRows.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.dataset.id = row.id;
+
+      const checkboxCell = document.createElement('td');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.addEventListener('change', () => selectRow(tr));
+      checkboxCell.appendChild(checkbox);
+      tr.appendChild(checkboxCell);
+
+      const idCell = document.createElement('td');
+      idCell.textContent = row.id;
+      tr.appendChild(idCell);
+
+      const nameCell = document.createElement('td');
+      nameCell.textContent = row.name;
+      tr.appendChild(nameCell);
+
+      const emailCell = document.createElement('td');
+      emailCell.textContent = row.email;
+      tr.appendChild(emailCell);
+
+      const actionsCell = document.createElement('td');
+      const editButton = createActionButton('edit', () => editRow(tr));
+      const deleteButton = createActionButton('delete', () => deleteRow(tr));
+      actionsCell.appendChild(editButton);
+      actionsCell.appendChild(deleteButton);
+      tr.appendChild(actionsCell);
+
+      tableBody.appendChild(tr);
+    });
+  }
+  function editRow(row) {
+    const id = parseInt(row.dataset.id);
+    const nameCell = row.querySelector('td:nth-child(3)');
+    const emailCell = row.querySelector('td:nth-child(4)');
+    const actionsCell = row.querySelector('td:nth-child(5)');
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = nameCell.textContent;
+
+    const emailInput = document.createElement('input');
+    emailInput.type = 'text';
+    emailInput.value = emailCell.textContent;
+
+    const saveButton = createActionButton('save', () => saveRow(row, id));
+    const cancelButton = createActionButton('cancel', () => cancelEdit(row));
+
+    nameCell.innerHTML = '';
+    emailCell.innerHTML = '';
+    actionsCell.innerHTML = '';
+
+    nameCell.appendChild(nameInput);
+    emailCell.appendChild(emailInput);
+    actionsCell.appendChild(saveButton);
+    actionsCell.appendChild(cancelButton);
+  }
+
+  // Function to save the edited row
+  function saveRow(row, id) {
+    const nameInput = row.querySelector('td:nth-child(3) input');
+    const emailInput = row.querySelector('td:nth-child(4) input');
+
+    const newName = nameInput.value;
+    const newEmail = emailInput.value;
+
+    const index = data.findIndex(item => item.id === id);
+    data[index].name = newName;
+    data[index].email = newEmail;
+
+    renderTable();
+  }
+
+  // Function to cancel editing and restore original row content
+  function cancelEdit(row) {
+    const id = parseInt(row.dataset.id);
+    const index = data.findIndex(item => item.id === id);
+    const originalName = data[index].name;
+    const originalEmail = data[index].email;
+
+    renderTable();
+  }
+
+  // Function to handle row deletion
+  function deleteRow(row) {
+    const id = parseInt(row.dataset.id);
+    const index = data.findIndex(item => item.id === id);
+    data.splice(index, 1);
+
+    renderTable();
+    renderPagination(data.length);
+  }
+  // Function to create action buttons
+  function createActionButton(className, onClick) {
+    const button = document.createElement('button');
+    button.className = className;
+    button.textContent = className.charAt(0).toUpperCase() + className.slice(1);
+    button.addEventListener('click', onClick);
+    return button;
+  }
+
+  // Function to handle row selection
+  function selectRow(row) {
+    row.classList.toggle('selected');
+  }
+
+  // Function to delete selected rows
+  function deleteSelected() {
+    const selectedRows = document.querySelectorAll('#data-table tbody .selected');
+    selectedRows.forEach(row => {
+      const id = parseInt(row.dataset.id);
+      data.splice(data.findIndex(item => item.id === id), 1);
+    });
+
+    renderTable();
+  }
+
+  // Function to handle row editing
+  function editRow(row) {
+    // Add your logic for in-place editing here
+  }
+
+  // Function to perform search
+  function search() {
+    const searchTerm = document.getElementById('search').value.toLowerCase();
+    const filteredData = data.filter(row =>
+      Object.values(row).some(value => value.toString().toLowerCase().includes(searchTerm))
+    );
+
+    currentPage = 1; // Reset to the first page after searching
+    renderTable();
+    renderPagination(filteredData.length);
+  }
+
+  // Function to render pagination buttons
+  function renderPagination(totalRows) {
+    const totalPages = Math.ceil(totalRows / rowsPerPage);
+    const paginationDiv = document.querySelector('.pagination');
+
+    paginationDiv.innerHTML = '';
+
+    if (totalPages > 1) {
+      const firstButton = createPaginationButton('first-page', 'First', 1);
+      const prevButton = createPaginationButton('previous-page', 'Previous', currentPage - 1);
+      paginationDiv.appendChild(firstButton);
+      paginationDiv.appendChild(prevButton);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const pageButton = createPaginationButton('page', i, i);
+        paginationDiv.appendChild(pageButton);
+      }
+
+      const nextButton = createPaginationButton('next-page', 'Next', currentPage + 1);
+      const lastButton = createPaginationButton('last-page', 'Last', totalPages);
+      paginationDiv.appendChild(nextButton);
+      paginationDiv.appendChild(lastButton);
+    }
+  }
+
+  // Function to create pagination buttons
+  function createPaginationButton(className, label, targetPage) {
+    const button = document.createElement('button');
+    button.className = className;
+    button.textContent = label;
+    button.addEventListener('click', () => {
+      currentPage = targetPage;
+      renderTable();
+    });
+    return button;
+  }
+
+  // Initial rendering
+  renderTable();
+  renderPagination(data.length);
+</script>
+
+</body>
+</html>
